@@ -1,9 +1,0 @@
-version: '3.8'
-
-services:
-  ncat:
-    build: .
-    container_name: ncat
-    volumes:
-      - ./data:/app/data
-    command: ["--help"]
