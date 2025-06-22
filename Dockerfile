@@ -174,8 +174,8 @@ RUN mkdir -p ${WHISPER_CACHE_DIR}
 COPY requirements.txt .
 
 # Install Python dependencies, upgrade pip 
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt && \
+RUN pip install --break-system-packages --no-cache-dir --upgrade pip && \
+    pip install --break-system-packages --no-cache-dir -r requirements.txt && \
     pip install openai-whisper && \
     pip install playwright && \
     pip install jsonschema 
