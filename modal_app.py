@@ -4,22 +4,44 @@ app = modal.App("ncat-gpu-app")
 
 image = (
     modal.Image.debian_slim()
-    .pip_install("torch", "openai-whisper", "ffmpeg-python", "flask", "gunicorn", "other-ncat-deps")
+    .pip_install(
+        "Flask",
+        "Werkzeug",
+        "requests",
+        "ffmpeg-python",
+        "openai-whisper",
+        "gunicorn",
+        "APScheduler",
+        "srt",
+        "numpy",
+        "torch",
+        "google-auth",
+        "google-auth-oauthlib",
+        "google-auth-httplib2",
+        "google-api-python-client",
+        "google-cloud-storage",
+        "psutil",
+        "boto3",
+        "Pillow",
+        "matplotlib",
+        "yt-dlp"
+    )
     .env(
         {
             "S3_BUCKET_NAME": "lumeora",
             "S3_ENDPOINT_URL": "https://047a93543c3c69fc1cb880a69f9938a1.r2.cloudflarestorage.com",
             "S3_REGION": "auto",
+            # API_KEY, S3_ACCESS_KEY, S3_SECRET_KEY come from modal secret
         }
     )
 )
+
 @app.function(
     image=image,
     gpu="A10G",
     concurrency_limit=1,
-    secrets=[modal.Secret.from_name("ncat-secret")],
+    secrets=[modal.Secret.from_name("ncat-secret")]
 )
-
 @modal.web_server(port=8080)
 def run_ncat_api():
     import subprocess
