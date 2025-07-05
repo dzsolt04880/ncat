@@ -9,7 +9,7 @@ image = (
     .add_local_dir(".", "/root")
 )
 
-@app.function(image=image, gpu="A10G", max_containers=1)
+@app.function(image=image, max_containers=1)
 @modal.web_server(port=8080)
 def run():
     import subprocess
