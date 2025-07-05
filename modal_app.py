@@ -4,7 +4,6 @@ app = modal.App("ncat-gpu-app")
 
 image = (
     modal.Image.debian_slim()
-    .add_local_dir(".", "/root")  # Copies your entire project into the container
     .pip_install(
         "Flask",
         "Werkzeug",
@@ -34,12 +33,13 @@ image = (
             "S3_REGION": "auto",
         }
     )
+    .add_local_dir(".", "/root")  # <-- NOW AT THE END!
 )
 
 @app.function(
     image=image,
     gpu="A10G",
-    max_containers=1,  # Use max_containers as per Modal 1.0 migration
+    max_containers=1,
     secrets=[modal.Secret.from_name("ncat-secret")]
 )
 @modal.web_server(port=8080)
