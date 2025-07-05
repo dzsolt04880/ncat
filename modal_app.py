@@ -5,11 +5,11 @@ app = modal.App("ncat-gpu-app")
 image = (
     modal.Image.debian_slim()
     .apt_install(
-        "fontconfig",  # for fc-list
-        "libglib2.0-0",  # common for image/video processing
-        "libsm6",        # for Pillow/skimage
-        "libxext6",      # for Pillow/skimage
-        "libxrender1",   # for Pillow/skimage
+        "fontconfig",
+        "libglib2.0-0",
+        "libsm6",
+        "libxext6",
+        "libxrender1",
     )
     .pip_install(
         "Flask",
@@ -35,9 +35,7 @@ image = (
         "jsonschema",
         # "playwright",  # Uncomment if you want screenshot endpoints
     )
-    .run_commands(
-        "mkdir -p /usr/share/fonts/custom"
-    )
+    .run_commands("mkdir -p /usr/share/fonts/custom")
     .env(
         {
             "S3_BUCKET_NAME": "lumeora",
@@ -57,8 +55,7 @@ image = (
 @modal.web_server(port=8080)
 def run_ncat_api():
     import os
-    print("DEBUG: CWD:", os.getcwd())
-    print("DEBUG: Files in CWD:", os.listdir("."))
+    print("DEBUG: CWD:", os.getcwd(), flush=True)
+    print("DEBUG: Files in CWD:", os.listdir("."), flush=True)
     import subprocess
-    # This launches gunicorn pointed at your app object in app.py
     subprocess.run(["gunicorn", "--bind", "0.0.0.0:8080", "app:app"])
