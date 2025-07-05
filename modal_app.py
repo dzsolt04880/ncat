@@ -31,7 +31,6 @@ image = (
             "S3_BUCKET_NAME": "lumeora",
             "S3_ENDPOINT_URL": "https://047a93543c3c69fc1cb880a69f9938a1.r2.cloudflarestorage.com",
             "S3_REGION": "auto",
-            # API_KEY, S3_ACCESS_KEY, S3_SECRET_KEY come from modal secret
         }
     )
 )
@@ -39,10 +38,13 @@ image = (
 @app.function(
     image=image,
     gpu="A10G",
-    concurrency_limit=1,
+    max_containers=1,  # updated per Modal 1.0 migration
     secrets=[modal.Secret.from_name("ncat-secret")]
 )
 @modal.web_server(port=8080)
 def run_ncat_api():
+    import os
+    print("DEBUG: CWD:", os.getcwd())
+    print("DEBUG: Files in CWD:", os.listdir("."))
     import subprocess
     subprocess.run(["gunicorn", "--bind", "0.0.0.0:8080", "app:app"])
