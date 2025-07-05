@@ -1,13 +1,13 @@
 import modal
 
-stub = modal.Stub("ncat-gpu-app")
+app = modal.App("ncat-gpu-app")
 
 image = (
     modal.Image.debian_slim()
     .pip_install("torch", "openai-whisper", "ffmpeg-python", "flask", "gunicorn", "other-ncat-deps")
 )
 
-@stub.function(
+@app.function(
     image=image,
     gpu="A10G",
     concurrency_limit=1,
@@ -16,7 +16,7 @@ image = (
         "S3_BUCKET_NAME": "lumeora",
         "S3_ENDPOINT_URL": "https://047a93543c3c69fc1cb880a69f9938a1.r2.cloudflarestorage.com",
         "S3_REGION": "auto",
-        # do not set API_KEY, S3_ACCESS_KEY, S3_SECRET_KEY here -- those come from the secret
+        # API_KEY, S3_ACCESS_KEY, S3_SECRET_KEY come from the secret
     }
 )
 @modal.web_server(port=8080)
