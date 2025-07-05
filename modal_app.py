@@ -4,7 +4,9 @@ app = modal.App("ncat-gpu-app")
 
 image = (
     modal.Image.debian_slim()
-    # ... your .apt_install(), .pip_install(), .env(), .add_local_dir() ...
+    .apt_install("fontconfig")
+    .pip_install("Flask")
+    .add_local_dir(".", "/root")
 )
 
 @app.function(image=image, gpu="A10G", max_containers=1)
