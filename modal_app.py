@@ -4,6 +4,7 @@ app = modal.App("ncat-gpu-app")
 
 image = (
     modal.Image.debian_slim()
+    .apt_install("fontconfig")  # <-- Fixes fc-list error
     .pip_install(
         "Flask",
         "Werkzeug",
