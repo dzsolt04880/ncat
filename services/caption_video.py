@@ -14,10 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-
-
 import os
-import ffmpeg
 import logging
 import requests
 import subprocess
@@ -105,7 +102,7 @@ def generate_style_line(options):
     return f"Style: {','.join(str(v) for v in style_options.values())}"
 
 def process_captioning(file_url, caption_srt, caption_type, options, job_id):
-    """Process video captioning using FFmpeg."""
+    """Process video captioning using FFmpeg with GPU acceleration."""
     try:
         logger.info(f"Job {job_id}: Starting download of file from {file_url}")
         video_path = download_file(file_url, STORAGE_PATH)
@@ -162,72 +159,44 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             selected_font = FONT_PATHS.get('Arial')
             logger.warning(f"Job {job_id}: Font {font_name} not found. Using default font Arial.")
 
-        # For ASS subtitles, we should avoid overriding styles
+        # --------- GPU-accelerated ffmpeg command ---------
+        # For ASS subtitles, use the ass filter; for SRT, use the subtitles filter.
         if subtitle_extension == '.ass':
-            # Use the subtitles filter without force_style
-            subtitle_filter = f"subtitles='{srt_path}'"
+            subtitle_filter = f"ass={srt_path}"
             logger.info(f"Job {job_id}: Using ASS subtitle filter: {subtitle_filter}")
         else:
-            # Construct FFmpeg filter options for subtitles with detailed styling
-            subtitle_filter = f"subtitles={srt_path}:force_style='"
-            style_options = {
-                'FontName': font_name,  # Use the font name instead of the font file path
-                'FontSize': options.get('font_size', 24),
-                'PrimaryColour': options.get('primary_color', '&H00FFFFFF'),
-                'SecondaryColour': options.get('secondary_color', '&H00000000'),
-                'OutlineColour': options.get('outline_color', '&H00000000'),
-                'BackColour': options.get('back_color', '&H00000000'),
-                'Bold': options.get('bold', 0),
-                'Italic': options.get('italic', 0),
-                'Underline': options.get('underline', 0),
-                'StrikeOut': options.get('strikeout', 0),
-                'Alignment': options.get('alignment', 2),
-                'MarginV': options.get('margin_v', 10),
-                'MarginL': options.get('margin_l', 10),
-                'MarginR': options.get('margin_r', 10),
-                'Outline': options.get('outline', 1),
-                'Shadow': options.get('shadow', 0),
-                'Blur': options.get('blur', 0),
-                'BorderStyle': options.get('border_style', 1),
-                'Encoding': options.get('encoding', 1),
-                'Spacing': options.get('spacing', 0),
-                'Angle': options.get('angle', 0),
-                'UpperCase': options.get('uppercase', 0)
-            }
+            subtitle_filter = f"subtitles={srt_path}:force_style='FontName={font_name}'"
+            logger.info(f"Job {job_id}: Using SRT subtitle filter: {subtitle_filter}")
 
-            # Add only populated options to the subtitle filter
-            subtitle_filter += ','.join(f"{k}={v}" for k, v in style_options.items() if v is not None)
-            subtitle_filter += "'"
-            logger.info(f"Job {job_id}: Using subtitle filter: {subtitle_filter}")
+        ffmpeg_cmd = [
+            "ffmpeg",
+            "-y",
+            "-hwaccel", "cuda",
+            "-i", video_path,
+            "-vf", subtitle_filter,
+            "-c:v", "h264_nvenc",
+            "-preset", "fast",
+            "-c:a", "copy",
+            output_path
+        ]
 
-        try:
-            # Log the FFmpeg command for debugging
-            logger.info(f"Job {job_id}: Running FFmpeg with filter: {subtitle_filter}")
+        logger.info(f"Job {job_id}: Running ffmpeg command: {' '.join(ffmpeg_cmd)}")
+        result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True)
 
-            # Run FFmpeg to add subtitles to the video
-            ffmpeg.input(video_path).output(
-                output_path,
-                vf=subtitle_filter,
-                acodec='copy'
-            ).run()
-            logger.info(f"Job {job_id}: FFmpeg processing completed, output file at {output_path}")
-        except ffmpeg.Error as e:
-            # Log the FFmpeg stderr output
-            if e.stderr:
-                error_message = e.stderr.decode('utf8')
-            else:
-                error_message = 'Unknown FFmpeg error'
-            logger.error(f"Job {job_id}: FFmpeg error: {error_message}")
-            raise
+        if result.returncode != 0:
+            logger.error(f"Job {job_id}: ffmpeg failed: {result.stderr}")
+            raise RuntimeError(f"ffmpeg failed: {result.stderr}")
+
+        logger.info(f"Job {job_id}: ffmpeg succeeded")
 
         # The upload process will be handled by the calling function
         return output_path
 
-        # Clean up local files
-        os.remove(video_path)
-        os.remove(srt_path)
-        os.remove(output_path)
-        logger.info(f"Job {job_id}: Local files cleaned up")
+        # Clean up local files (unreachable code; consider moving if needed)
+        # os.remove(video_path)
+        # os.remove(srt_path)
+        # os.remove(output_path)
+        # logger.info(f"Job {job_id}: Local files cleaned up")
     except Exception as e:
         logger.error(f"Job {job_id}: Error in process_captioning: {str(e)}")
         raise
