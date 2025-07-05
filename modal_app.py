@@ -24,7 +24,8 @@ image = (
         "boto3",
         "Pillow",
         "matplotlib",
-        "yt-dlp"
+        "yt-dlp",
+        "jsonschema"      # <-- ADD THIS LINE
     )
     .env(
         {
@@ -33,7 +34,7 @@ image = (
             "S3_REGION": "auto",
         }
     )
-    .add_local_dir(".", "/root")  # <-- NOW AT THE END!
+    .add_local_dir(".", "/root")  # Always put this LAST
 )
 
 @app.function(
