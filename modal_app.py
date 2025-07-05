@@ -25,8 +25,10 @@ image = (
         "Pillow",
         "matplotlib",
         "yt-dlp",
-        "jsonschema"      # <-- ADD THIS LINE
+        "jsonschema",
+        # "playwright",  # Uncomment if you want screenshot endpoints
     )
+    .run_commands("mkdir -p /usr/share/fonts/custom")
     .env(
         {
             "S3_BUCKET_NAME": "lumeora",
@@ -34,7 +36,7 @@ image = (
             "S3_REGION": "auto",
         }
     )
-    .add_local_dir(".", "/root")  # Always put this LAST
+    .add_local_dir(".", "/root")
 )
 
 @app.function(
